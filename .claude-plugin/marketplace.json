@@ -1,0 +1,16 @@
+{
+  "name": "development-guidelines",
+  "owner": {
+    "name": "chrisguiney"
+  },
+  "metadata": {
+    "description": "Coding guidelines for Claude Code: language-neutral rules plus per-language skills."
+  },
+  "plugins": [
+    {
+      "name": "development-guidelines",
+      "source": "./plugins/development-guidelines",
+      "description": "Core development rules and per-language coding guidelines, starting with Go."
+    }
+  ]
+}
