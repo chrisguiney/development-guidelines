@@ -10,7 +10,7 @@
     {
       "name": "development-guidelines",
       "source": "./plugins/development-guidelines",
-      "description": "Core development rules and per-language coding guidelines, starting with Go."
+      "description": "Core development rules and per-language coding guidelines: Go and TLA+."
     }
   ]
 }

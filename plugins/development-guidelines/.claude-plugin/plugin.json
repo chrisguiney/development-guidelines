@@ -1,11 +1,19 @@
 {
   "name": "development-guidelines",
-  "version": "0.2.0",
-  "description": "Core development rules and per-language coding guidelines, starting with Go.",
+  "version": "0.3.0",
+  "description": "Core development rules and per-language coding guidelines: Go and TLA+.",
   "author": {
     "name": "chrisguiney"
   },
   "repository": "https://github.com/chrisguiney/development-guidelines",
   "license": "Apache-2.0",
-  "keywords": ["guidelines", "code-review", "style", "go"]
+  "keywords": [
+    "guidelines",
+    "code-review",
+    "style",
+    "go",
+    "tla+",
+    "tlc",
+    "formal-methods"
+  ]
 }

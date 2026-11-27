@@ -6,6 +6,7 @@ A Claude Code plugin with coding guidelines that Claude loads when writing, refa
 | --- | --- | --- |
 | `core-guidelines` | any code work | language-neutral rules and the review checklist |
 | `go-guidelines` | Go code | Go rules; Do and Don't examples in `references/examples.md` |
+| `tla-guidelines` | TLA+ specs and TLC configs | modelling real code (goroutines, channels, locks), model-first defects, TLC performance and safe runs; examples in `references/examples.md` |
 
 ## Install
 
@@ -30,6 +31,8 @@ plugins/development-guidelines/
     core-guidelines/SKILL.md
     go-guidelines/SKILL.md
     go-guidelines/references/examples.md
+    tla-guidelines/SKILL.md
+    tla-guidelines/references/examples.md
 ```
 
 ## Adding a language
