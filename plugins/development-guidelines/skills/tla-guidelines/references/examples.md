@@ -44,14 +44,7 @@ Do:
 | D44 | stall clock sampled every 30 s | clock advanced on applied tip | the sample is the bug | AntiFlapPinSampledStampBug |
 ```
 
-Don't:
-
-```go
-// TestPinHolds checks the AntiFlapPin.tla StallEscape invariant (DRIFT D44).
-func TestPinHolds(t *testing.T) { ... }
-```
-
-The test is read by people who never see the model; name what it checks in the code's terms.
+Don't: a spec with no commit and no line references. When the code moves, nobody can tell which actions still describe it.
 
 ## Goroutines
 

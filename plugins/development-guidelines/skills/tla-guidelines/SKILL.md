@@ -21,7 +21,6 @@ A model earns its keep by finding the interleaving a human would not. Everything
 
 - A spec names the code commit it models and, for every action, the file and line it stands for.
 - Where the model deliberately differs from the code or from a reference implementation, record it in a drift table: what the code does, what the model does, why, and which config shows it.
-- Models live in their own repository. Product code, test names, test file names and commit messages never mention the model, its configs or TLA+.
 - Re-check a model against the code it claims to model whenever that code moves; a model of an older commit hides the goroutines added since.
 
 ## Concurrency, not just state ([examples](references/examples.md#goroutines))
