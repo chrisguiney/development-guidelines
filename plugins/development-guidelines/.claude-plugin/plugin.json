@@ -1,6 +1,6 @@
 {
   "name": "development-guidelines",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Core development rules and per-language coding guidelines, starting with Go.",
   "author": {
     "name": "chrisguiney"

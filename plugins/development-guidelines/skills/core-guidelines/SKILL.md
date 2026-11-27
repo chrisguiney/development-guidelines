@@ -1,6 +1,6 @@
 ---
 name: core-guidelines
-description: Language-neutral development rules for writing, refactoring or reviewing code in any language - scope of a change, refactor planning, naming, function and file size, pure computation vs I/O, errors, logging, secrets, untrusted input, locks, background work, assertions, metrics, comments, specifications, tests. Use before writing or reviewing code; then load the language skill (for example go-guidelines) for its specifics and examples.
+description: Language-neutral development rules for writing, refactoring or reviewing code in any language - scope of a change, refactor planning, layout, naming, function and file size, pure computation vs I/O, errors, logging, secrets, untrusted input, locks, background work, assertions, metrics, comments, specifications, tests. Use before writing or reviewing code; then load the language skill (for example go-guidelines) for its specifics and examples.
 ---
 
 # Core development guidelines
@@ -25,6 +25,13 @@ A change either refactors or changes behaviour, never both. Mixed together, a re
     - how behaviour is shown unchanged at each step: tests that move, tests that stay, any model or parity check;
     - what is measured for performance, before and after;
     - where it can stop halfway and still leave the code better than it found it.
+
+## Layout
+
+- Separate the steps of a function with blank lines: around loops, before declarations that start a new step, between successive related conditionals. Code with no vertical space reads as one undivided task.
+- Build a value once all its parts are known, in one expression. Don't create it half-empty and fill it in with assignments afterwards.
+- Document every field of a type: what it holds and how it is used, directly above the declaration. A lock keeps its `protects a, b, c` comment instead (see Concurrency).
+- Package or module documentation lives in one place, the file the language reserves for it.
 
 ## Naming
 
@@ -111,6 +118,7 @@ A unit test package stays under 60 seconds and 2 GiB under the race detector.
 - [ ] Refactor or behaviour change, not both; no cleanups around a fix; large refactors have a reviewed plan
 - [ ] No function over 80 lines or nested deeper than 3 levels; no new allowance entry
 - [ ] Names short and plain; each type has one responsibility
+- [ ] Steps separated by blank lines; values built once, complete; every field documented
 - [ ] Pure computation apart from I/O; interfaces narrow and declared by the consumer
 - [ ] I/O reports errors, wrapped with context; no secrets in errors or logs; structured logs with readable units
 - [ ] Input validated at the boundary, reads bounded, SQL parameterized, no shell

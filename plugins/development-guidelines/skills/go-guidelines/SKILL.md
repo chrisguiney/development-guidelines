@@ -1,6 +1,6 @@
 ---
 name: go-guidelines
-description: Go coding rules for writing, refactoring or reviewing Go code - naming, interfaces, packages, pure vs I/O, error wrapping, slog, secrets, untrusted input, SQL, mutexes, goroutines with Run or Start/Close, debug assertions with a check package and build tag, metrics, runtime/trace, doc comments, tests, port-0 listeners. Use before writing or reviewing any .go file, together with core-guidelines.
+description: Go coding rules for writing, refactoring or reviewing Go code - naming, layout (doc.go, var blocks, blank lines, struct literals, field comments), interfaces, packages, pure vs I/O, error wrapping, slog, secrets, untrusted input, SQL, mutexes, goroutines with Run or Start/Close, debug assertions with a check package and build tag, metrics, runtime/trace, doc comments, tests, port-0 listeners. Use before writing or reviewing any .go file, together with core-guidelines.
 ---
 
 # Go guidelines
@@ -19,6 +19,18 @@ Go applications of `core-guidelines`, plus Go-only rules. Every rule has a Do an
 - Guard clauses keep the happy path at one level.
 - Mode flags and option structs become two types behind one small interface, chosen at construction.
 - A `switch` on a variant (version, era, backend) inside logic becomes a descriptor per variant with function fields.
+
+## Layout ([examples](references/examples.md#layout))
+
+- Package documentation lives in `doc.go`, which holds the package doc comment and the `package` clause and nothing else. No other file in the package has a package comment ([examples](references/examples.md#package-documentation)).
+- Two or more successive `var` declarations become one `var ( ... )` block ([examples](references/examples.md#var-blocks)).
+- Blank lines separate the steps of a function, so a reader sees where one task ends and the next begins ([examples](references/examples.md#blank-lines)):
+    - before and after a `for` loop;
+    - before a `var` declaration, unless it is the first line of the function;
+    - between successive related `if` statements. A call stays directly above the `if err != nil` that checks it; the blank line goes between one call-and-check and the next.
+- A struct literal with fields spans multiple lines: one field per line, trailing comma ([examples](references/examples.md#struct-literals)).
+- Compute every field first, then build the struct in one literal. Don't create a struct and then fill it in with `x.y = ...`; assigning a field later is for state that changes during the value's life, not for finishing construction ([examples](references/examples.md#building-structs)).
+- Every struct field has a doc comment on the line directly above it, saying what the field holds and how it is used. The exception is a mutex, which keeps its `// protects a, b, c` comment at the end of its line ([examples](references/examples.md#field-comments)).
 
 ## Packages and interfaces ([examples](references/examples.md#interfaces))
 
@@ -72,7 +84,7 @@ A small `check` package, gated by a `debug` build tag:
 ## Comments ([examples](references/examples.md#comments))
 
 - Doc comments on every exported identifier.
-- Mermaid diagrams go in the package or type doc comment of the file they describe.
+- Mermaid diagrams go in the package doc comment in `doc.go`, or in the doc comment of the type they describe.
 - Specification links name the section and a pinned version.
 
 ## Testing ([examples](references/examples.md#testing))

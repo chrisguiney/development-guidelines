@@ -84,10 +84,12 @@ func (s *Store) Load(key string) (Entry, error) {
 	if key == "" {
 		return Entry{}, ErrNoKey
 	}
+
 	raw, err := s.db.Get(key)
 	if err != nil {
 		return Entry{}, fmt.Errorf("get %q: %w", key, err)
 	}
+
 	return decode(raw)
 }
 ```
@@ -135,6 +137,218 @@ func (p *Processor) step(b Block) error {
 }
 ```
 
+## Layout
+
+### Package documentation
+
+Do: `doc.go` holds the package comment and nothing else.
+
+```go
+// doc.go
+
+// Package cache keeps recently read entries in memory so repeated
+// lookups skip the database.
+package cache
+```
+
+```go
+// store.go
+
+package cache
+
+type Store struct{ ... }
+```
+
+Don't: the package comment sits in whichever file was written first, or is split across several.
+
+```go
+// store.go
+
+// Package cache provides a cache.
+package cache
+
+type Store struct{ ... }
+```
+
+```go
+// evict.go
+
+// Package cache evicts least recently used entries.
+package cache
+```
+
+### Var blocks
+
+Do:
+
+```go
+var (
+	total   uint64
+	skipped int
+	seen    = make(map[string]bool)
+)
+```
+
+Don't:
+
+```go
+var total uint64
+var skipped int
+var seen = make(map[string]bool)
+```
+
+### Blank lines
+
+Do: each step stands on its own.
+
+```go
+func (s *Store) Compact(ctx context.Context) (int, error) {
+	keys, err := s.db.Keys(ctx)
+	if err != nil {
+		return 0, fmt.Errorf("compact: list keys: %w", err)
+	}
+
+	cutoff, err := s.cutoff(ctx)
+	if err != nil {
+		return 0, fmt.Errorf("compact: cutoff: %w", err)
+	}
+
+	var stale []string
+
+	for _, k := range keys {
+		if k.Written.Before(cutoff) {
+			stale = append(stale, k.ID)
+		}
+	}
+
+	if len(stale) == 0 {
+		return 0, nil
+	}
+
+	removed, err := s.db.Delete(ctx, stale)
+	if err != nil {
+		return 0, fmt.Errorf("compact: delete %d keys: %w", len(stale), err)
+	}
+
+	return removed, nil
+}
+```
+
+Don't: one wall of code, and a check pulled away from the call it checks.
+
+```go
+func (s *Store) Compact(ctx context.Context) (int, error) {
+	keys, err := s.db.Keys(ctx)
+
+	if err != nil {
+		return 0, fmt.Errorf("compact: list keys: %w", err)
+	}
+	cutoff, err := s.cutoff(ctx)
+	if err != nil {
+		return 0, fmt.Errorf("compact: cutoff: %w", err)
+	}
+	var removed int
+	var stale []string
+	for _, k := range keys {
+		if k.Written.Before(cutoff) {
+			stale = append(stale, k.ID)
+		}
+	}
+	if len(stale) == 0 {
+		return 0, nil
+	}
+	removed, err = s.db.Delete(ctx, stale)
+	if err != nil {
+		return 0, fmt.Errorf("compact: delete %d keys: %w", len(stale), err)
+	}
+	return removed, nil
+}
+```
+
+### Struct literals
+
+Do:
+
+```go
+e := Entry{
+	Key:     key,
+	Value:   raw,
+	Written: now,
+}
+```
+
+Don't:
+
+```go
+e := Entry{Key: key, Value: raw, Written: now}
+```
+
+### Building structs
+
+Do: compute every field, then build the value once.
+
+```go
+func NewWorker(clk Clock, sink Sink, every time.Duration, logger *slog.Logger) *Worker {
+	if every <= 0 {
+		every = time.Second
+	}
+
+	return &Worker{
+		clk:    clk,
+		sink:   sink,
+		every:  every,
+		logger: logger.With("component", "worker"),
+	}
+}
+```
+
+Don't: build a half-empty value and patch it, so a reader has to scan the whole function to learn what it holds.
+
+```go
+func NewWorker(clk Clock, sink Sink, every time.Duration, logger *slog.Logger) *Worker {
+	w := &Worker{}
+	w.clk = clk
+	w.sink = sink
+	w.every = every
+	if w.every <= 0 {
+		w.every = time.Second
+	}
+	w.logger = logger.With("component", "worker")
+	return w
+}
+```
+
+### Field comments
+
+Do: each field says what it holds and how it is used.
+
+```go
+type Worker struct {
+	// clk supplies the time for each tick; tests pass a fake clock.
+	clk Clock
+
+	// sink receives each flushed batch; Run returns its error.
+	sink Sink
+
+	// every is the time between flushes. NewWorker defaults it to one second.
+	every time.Duration
+
+	// logger is tagged with component=worker.
+	logger *slog.Logger
+}
+```
+
+Don't: a reader has to find every use of a field to learn what it is.
+
+```go
+type Worker struct {
+	clk    Clock
+	sink   Sink
+	every  time.Duration // interval
+	logger *slog.Logger
+}
+```
+
 ## Interfaces
 
 Do: the consumer declares what it calls, exported because it appears in `New`.
@@ -147,7 +361,11 @@ type TxSource interface {
 	Tx(ctx context.Context, id string) (Tx, error)
 }
 
-func New(src TxSource) *Service { return &Service{src: src} }
+func New(src TxSource) *Service {
+	return &Service{
+		src: src,
+	}
+}
 ```
 
 ```go
@@ -192,10 +410,12 @@ func (s *Service) Quote(ctx context.Context, id string) (uint64, error) {
 	if err != nil {
 		return 0, fmt.Errorf("quote %s: %w", id, err)
 	}
+
 	p, err := s.db.Params(ctx)
 	if err != nil {
 		return 0, fmt.Errorf("quote %s: params: %w", id, err)
 	}
+
 	return fee(tx.Size, p), nil
 }
 ```
@@ -228,10 +448,12 @@ func (s *Store) Load(ctx context.Context, id string) (Key, error) {
 	if err != nil {
 		return Key{}, fmt.Errorf("load key %s: %w", id, err)
 	}
+
 	k, err := parseKey(raw)
 	if err != nil {
 		return Key{}, fmt.Errorf("parse key %s: %w", id, err)
 	}
+
 	return k, nil
 }
 
@@ -303,6 +525,7 @@ func (s *Store) Txs(ctx context.Context, addr string, sort string, lim Limit) ([
 	if !ok {
 		return nil, fmt.Errorf("unknown sort %q", sort)
 	}
+
 	q := "SELECT id, slot FROM txs WHERE addr = ? ORDER BY " + col + " LIMIT ?"
 	rows, err := s.db.QueryContext(ctx, q, addr, int(lim))
 	// ...
@@ -326,14 +549,19 @@ Do:
 
 ```go
 type Store struct {
-	mu      sync.Mutex // protects entries, hits
+	mu sync.Mutex // protects entries, hits
+
+	// entries maps a key to its entry; Get and Put read and write it.
 	entries map[string]Entry
-	hits    int
+
+	// hits counts Get calls that found their key, for the hit-rate metric.
+	hits int
 }
 
 func (s *Store) Get(key string) (Entry, bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
 	e, ok := s.entries[key]
 	if ok {
 		s.hits++
@@ -369,6 +597,7 @@ func (w *Worker) Run(ctx context.Context) error {
 func (w *Worker) poll(ctx context.Context) error {
 	t := time.NewTicker(w.every)
 	defer t.Stop()
+
 	for {
 		select {
 		case <-ctx.Done():
@@ -447,8 +676,10 @@ func (s *Store) insert(e Entry) {
 			check.Pre(false, "Store.insert: s.mu held")
 		}
 	}
+
 	s.order = append(s.order, e.Key)
 	s.entries[e.Key] = e
+
 	if check.Slow {
 		check.Post(len(s.order) == len(s.entries), "Store.insert: index matches map")
 		check.Post(sort.StringsAreSorted(s.order), "Store.insert: order sorted")
@@ -526,9 +757,11 @@ s.mu.Unlock()
 s.tip.Publish(next)
 ```
 
-Do: the diagram sits in the file it describes.
+Do: the diagram sits in the package doc comment, in `doc.go`.
 
 ````go
+// doc.go
+
 // Package writer owns the single database write connection.
 //
 //	```mermaid
